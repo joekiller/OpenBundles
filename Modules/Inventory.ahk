@@ -287,8 +287,8 @@ rightClickUseItem() {
     ; Perform OCR on the right-click menu.
     ocrObject := getOcr(COORDS["OCR"]["FruitMenuStart"][1], COORDS["OCR"]["FruitMenuStart"][2], 
         COORDS["OCR"]["FruitMenuSize"][1], COORDS["OCR"]["FruitMenuSize"][2], 5, true)
-    
-    openText := ocrObject.FindStrings("Ope[nm]+",,RegExMatch)  ; Find the "Open" option in the OCR result.
+    OutputDebug "Right-Click Menu OCR Result:`n" . ocrObject.Text . "`n---"
+    openText := ocrObject.FindStrings("\b(?!:>*\s*)O[pP]e[nmpo](?:(?:\s+\d+)|(?:!*\d*))",,RegExMatch)  ; Find the "Open" option in the OCR result.
     
     ; If the "Open" option is found, move the mouse to the "Open" option and click it.
     if openText.Length {
