@@ -62,5 +62,5 @@ COORDS["OCR"] := Map()
 
 ; Fruit menu.
 ; ----------------------------------------------------------------------------------------
-COORDS["OCR"]["FruitMenuStart"] := [573, 375]
-COORDS["OCR"]["FruitMenuSize"] := [159, 462]
+COORDS["OCR"]["FruitMenuStart"] := [573, 360]
+COORDS["OCR"]["FruitMenuSize"] := [189, 420]

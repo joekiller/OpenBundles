@@ -9,7 +9,7 @@ global INVENTORY_SEARCH_CURSOR := Map("Start", [1320, 265], "End", [1340, 265], 
 global INVENTORY_SEARCH_TERM := Map("Start", [1408, 246], "End", [1422, 257], "Colour", 0x1E1E1E, "Tolerance", 5)
 global ITEM_CONTEXT_MENU_BORDER := Map("Start", [567, 415], "End", [567, 415], "Colour", 0x000000, "Tolerance", 5)
 global OOPS_ERROR_QUESTION_MARK := Map("Start", [1011, 528], "End", [1011, 528], "Colour", 0xFFB837, "Tolerance", 5)
-global ITEMS_TAB_BOOSTS_TEXT := Map("X", 907, "Y", 287, "W", 101, "H", 28, "Scale", 5)
+global ITEMS_TAB_BOOSTS_TEXT := Map("X", 907, "Y", 287, "W", 101, "H", 30, "Scale", 5)
 
 
 ; ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
@@ -231,18 +231,27 @@ useItem(itemToUse) {
     if !openItemsTab()  ; Open the items tab.
         return
 
-    if !clickInventorySearchBox()  ; Click the inventory search box.
-        return
+    loop {
+        if !clickInventorySearchBox()  ; Click the inventory search box.
+            break
     
-    if !enterSearchTerm(itemToUse)  ; Enter the search term.
-        return
+        if !enterSearchTerm(itemToUse)  ; Enter the search term.
+            break
 
-    if hasItem() {  ; Check if the item is openText.
-        rightClickUseItem()
+        loop {
+            if hasItem() {  ; Check if the item is openText.
+                if !rightClickUseItem()  {
+                    break
+                }
+            } else {
+                break
+            }
+        }
+        
+        closeOopsWindow()
     }
     
     closeInventoryMenu()  ; Close the inventory menu.
-    closeOopsWindow()  ; Close any "Oops" window.
 }
 
 ; ---------------------------------------------------------------------------------
@@ -266,19 +275,20 @@ useItem(itemToUse) {
 rightClickUseItem() {
     SendEvent "{Click, " COORDS["Inventory"]["Item1"][1] ", " COORDS["Inventory"]["Item1"][2] ", 1, Right}"  ; Right-click the first item in the inventory.
     MouseMove 500, 0,, "R"  ; Move the mouse to the right.
+    
 
     ; Loop to check if the right-click menu is open.
     Loop 50 {
         if isRightClickMenuOpen()
             break
-        Sleep 50
+        Sleep 10
     }
 
     ; Perform OCR on the right-click menu.
     ocrObject := getOcr(COORDS["OCR"]["FruitMenuStart"][1], COORDS["OCR"]["FruitMenuStart"][2], 
         COORDS["OCR"]["FruitMenuSize"][1], COORDS["OCR"]["FruitMenuSize"][2], 5, true)
     
-    openText := ocrObject.FindStrings("Open",,RegExMatch)  ; Find the "Open" option in the OCR result.
+    openText := ocrObject.FindStrings("Ope[nm]+",,RegExMatch)  ; Find the "Open" option in the OCR result.
     
     ; If the "Open" option is found, move the mouse to the "Open" option and click it.
     if openText.Length {
@@ -286,15 +296,18 @@ rightClickUseItem() {
             COORDS["OCR"]["FruitMenuStart"][2] + openText[openText.Length].Y + (openText[openText.Length].H / 2)]
         
         MouseMove lastOption[1], lastOption[2]
-        Sleep 100
+        MouseMove 10, 0, 2, "R"
 
         ; Loop to click the "Open" option in the right-click menu.
         ;Loop 50 {
             SendEvent "{Click, " lastOption[1] ", " lastOption[2] ", 1}"
         ;    if isRightClickMenuOpen()
         ;        break
-            Sleep 50
+            Sleep 10
         ;}
+        return true
+    } else {
+        return false
     }
 }
 
