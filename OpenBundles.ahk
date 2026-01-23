@@ -21,8 +21,19 @@ SetMouseDelay 10  ; Sets the delay between mouse events to 10 milliseconds, bala
 ; Titles and verfsioning for GUI elements.
 global MACRO_TITLE := "Open Bundles"  ; The title displayed in main GUI elements.
 global MACRO_VERSION := "0.2.0"  ; Script version, helpful for user support and debugging.
-global OVERLAY_MODE := false  ; A flag to indicate whether overlay mode is active, affecting GUI behavior.
+global OVERLAY_IDX := 1 ; Index for cycling through overlay modes.
+global OVERLAY_MODES := ["OFF", "GRID", "TARGETS", "BOTH"] ; Different overlay modes for debugging.
 
+overlayMode() {
+    global OVERLAY_IDX, OVERLAY_MODES
+    return OVERLAY_MODES[OVERLAY_IDX]
+}
+
+nextOverlayMode() {
+    global OVERLAY_IDX, OVERLAY_MODES
+    OVERLAY_IDX := Mod(OVERLAY_IDX, OVERLAY_MODES.Length) + 1
+    return overlayMode()
+}
 
 ; ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
 ; LIBRARIES
@@ -294,9 +305,9 @@ setCurrentAction(currentAction) {
 ; Return: OCR result object or recognized text.
 ; ---------------------------------------------------------------------------------
 getOcr(X, Y, W, H, Scale, ReturnObject := false) {
-
+    _overlayMode := overlayMode()  ; Get the current overlay mode for debugging.
     ; Visual Debugging
-    if (IsSet(OVERLAY_MODE) && OVERLAY_MODE) {
+    if (_overlayMode = "TARGETS" || _overlayMode = "BOTH") {
         Highlight(X, Y, W, H, -500, "Red", 2, "OCR")
     }
     OcrResult := OCR.FromRect(X, Y, W, H, "en", Scale)  ; Perform OCR on the specified area.
@@ -364,16 +375,14 @@ F9:: toggleGrid()
 ; Description: Toggles the Cyan Coordinate Grid (100px lines).
 ; ---------------------------------------------------------------------------------
 toggleGrid(*) {
-    global OVERLAY_MODE
+    overlayMode := nextOverlayMode()
     static gridGui := ""
 
-    if (gridGui) {
-        OVERLAY_MODE := false
+    if (gridGui && (overlayMode = "TARGETS" || overlayMode = "OFF")) {
         gridGui.Destroy()
         gridGui := ""
         return
     }
-    OVERLAY_MODE := true
 
     if !WinExist("ahk_exe RobloxPlayerBeta.exe") {
         MsgBox("Roblox window not found!")
