@@ -225,6 +225,7 @@ openBundles(*) {
     
     Loop {
         UseItem("Bundle")  ; Use "Bundle" items from the inventory.
+        WinActivate("Roblox")
     }
     
     closeInventoryMenu()  ; Close the inventory menu.
