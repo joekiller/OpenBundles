@@ -296,7 +296,7 @@ rightClickUseItem(offset) {
     ocrObject := getOcr(COORDS["OCR"]["FruitMenuStart"][1], COORDS["OCR"]["FruitMenuStart"][2] + offset, 
             COORDS["OCR"]["FruitMenuSize"][1], COORDS["OCR"]["FruitMenuSize"][2] + offset, 5, true)
     OutputDebug "Right-Click Menu OCR Result:`n" . ocrObject.Text . "`n---"
-    openText := ocrObject.FindStrings("\b[Oo][pP]e[onhmpt][nj€lJAcL\\]*S*\$*O*(?:[\s!i]*(?:\d+|S*[IRO]))?\b(?!\s*for\b)|Unlock",,RegExMatch)  ; Find the "Open" option in the OCR result.
+    openText := ocrObject.FindStrings("\b[Oo][pP]e[onhm€åpft][nj€lJAc)fL\\]*S*\$*O*(?:[\s!Ii']*(?:\d+|S*[IRlO]+))?\b(?!\s*for\b)|Unlock",,RegExMatch)  ; Find the "Open" option in the OCR result.
     
     ; If the "Open" option is found, move the mouse to the "Open" option and click it.
     if openText.Length {
