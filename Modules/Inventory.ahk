@@ -238,14 +238,24 @@ useItem(itemToUse) {
         if !enterSearchTerm(itemToUse)  ; Enter the search term.
             break
 
+        offsets := [COORDS["Offset"]["Item4"], COORDS["Offset"]["Item3"], COORDS["Offset"]["Item2"], COORDS["Offset"]["Item1"]]
         loop {
-            if hasItem() {  ; Check if the item is openText.
-                if !rightClickUseItem()  {
-                    break
+            offset := offsets.Pop()
+            loop {
+                if hasItem(offset) {  ; Check if the item is openText.
+                    if !rightClickUseItem(offset) {
+                        if !offsets.Length
+                            break
+                        offset := offsets.Pop()
+                    }
+                } else {
+                    if !offsets.Length
+                        break
+                    offset := offsets.Pop()
                 }
-            } else {
-                break
             }
+            if !offsets.Length
+                    break
         }
         
         closeOopsWindow()
@@ -272,28 +282,28 @@ useItem(itemToUse) {
 ;   - getOcr: Function to perform OCR on a specified area.
 ; Return: None; the function sends a right-click event to use the first item in the inventory and clicks the "Open" option in the right-click menu.
 ; ---------------------------------------------------------------------------------
-rightClickUseItem() {
-    SendEvent "{Click, " COORDS["Inventory"]["Item1"][1] ", " COORDS["Inventory"]["Item1"][2] ", 1, Right}"  ; Right-click the first item in the inventory.
-    MouseMove 500, 0,, "R"  ; Move the mouse to the right.
-    
+rightClickUseItem(offset) {
+    ; Perform OCR on the right-click menu.
+    SendEvent "{Click, " COORDS["Inventory"]["Item1"][1] ", " COORDS["Inventory"]["Item1"][2] + offset ", 1, Right}"  ; Right-click the first item in the inventory.
 
     ; Loop to check if the right-click menu is open.
     Loop 50 {
-        if isRightClickMenuOpen()
+        if isRightClickMenuOpen(offset)
             break
         Sleep 10
     }
 
-    ; Perform OCR on the right-click menu.
-    ocrObject := getOcr(COORDS["OCR"]["FruitMenuStart"][1], COORDS["OCR"]["FruitMenuStart"][2], 
-        COORDS["OCR"]["FruitMenuSize"][1], COORDS["OCR"]["FruitMenuSize"][2], 5, true)
+    ocrObject := getOcr(COORDS["OCR"]["FruitMenuStart"][1], COORDS["OCR"]["FruitMenuStart"][2] + offset, 
+            COORDS["OCR"]["FruitMenuSize"][1], COORDS["OCR"]["FruitMenuSize"][2] + offset, 5, true)
     OutputDebug "Right-Click Menu OCR Result:`n" . ocrObject.Text . "`n---"
-    openText := ocrObject.FindStrings("\bO[pP]e[onmp](?:[\s!]*\d+)?\b(?!\s*for\b)",,RegExMatch)  ; Find the "Open" option in the OCR result.
+    openText := ocrObject.FindStrings("\b[Oo][pP]e[onhmpt][nj€lJAcL\\]*S*\$*O*(?:[\s!i]*(?:\d+|S*[IRO]))?\b(?!\s*for\b)|Unlock",,RegExMatch)  ; Find the "Open" option in the OCR result.
     
     ; If the "Open" option is found, move the mouse to the "Open" option and click it.
     if openText.Length {
-        lastOption := [COORDS["OCR"]["FruitMenuStart"][1] + openText[openText.Length].X + (openText[openText.Length].W / 2), 
-            COORDS["OCR"]["FruitMenuStart"][2] + openText[openText.Length].Y + (openText[openText.Length].H / 2)]
+        lastOption := [
+            COORDS["OCR"]["FruitMenuStart"][1] + openText[openText.Length].X + (openText[openText.Length].W / 2), 
+            COORDS["OCR"]["FruitMenuStart"][2] + offset + openText[openText.Length].Y + (openText[openText.Length].H / 2)
+        ]
         
         MouseMove lastOption[1], lastOption[2]
         MouseMove 10, 0, 2, "R"
@@ -412,10 +422,10 @@ isSearchTermEntered() {
 ;   - ITEM_CONTEXT_MENU_BORDER: Array containing the coordinates and color information for the context menu border.
 ; Return: Boolean; true if the context menu is open, false otherwise.
 ; ---------------------------------------------------------------------------------
-isRightClickMenuOpen() {
+isRightClickMenuOpen(offset) {
     return PixelSearch(&openTextX, &openTextY,  ; Perform a pixel search.
-        ITEM_CONTEXT_MENU_BORDER["Start"][1], ITEM_CONTEXT_MENU_BORDER["Start"][2],  ; Starting coordinates for the search area.
-        ITEM_CONTEXT_MENU_BORDER["End"][1], ITEM_CONTEXT_MENU_BORDER["End"][2],  ; Ending coordinates for the search area.
+        ITEM_CONTEXT_MENU_BORDER["Start"][1], ITEM_CONTEXT_MENU_BORDER["Start"][2] + offset,  ; Starting coordinates for the search area.
+        ITEM_CONTEXT_MENU_BORDER["End"][1], ITEM_CONTEXT_MENU_BORDER["End"][2] + offset,  ; Ending coordinates for the search area.
         ITEM_CONTEXT_MENU_BORDER["Colour"], ITEM_CONTEXT_MENU_BORDER["Tolerance"])  ; Color and tolerance for the search.
 }
 
@@ -454,9 +464,9 @@ isOopsWindowOpen() {
 ;   - true if the pixel color is not openText, indicating the item is present.
 ;   - false if the pixel color is openText.
 ; ---------------------------------------------------------------------------------
-hasItem() {
+hasItem(offset) {
     return !PixelSearch(&X, &Y,  ; Perform pixel search at specified coordinates and color.
-        COORDS["Inventory"]["Item1"][1], COORDS["Inventory"]["Item1"][2],  
-        COORDS["Inventory"]["Item1"][1], COORDS["Inventory"]["Item1"][2],  
+        COORDS["Inventory"]["Item1"][1], COORDS["Inventory"]["Item1"][2] + offset,  
+        COORDS["Inventory"]["Item1"][1], COORDS["Inventory"]["Item1"][2] + offset,  
         0xFFFFFF, 5)  ; Search for the color 0xFFFFFF with a tolerance of 5.
 }

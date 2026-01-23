@@ -34,6 +34,12 @@ COORDS["Inventory"]["Item1"] := [504, 413]
 COORDS["Inventory"]["Potion1"] := [514, 365]
 COORDS["Inventory"]["Search"] := [1185, 257]
 COORDS["Inventory"]["X"] := [1502, 265]
+COORDS["Offset"] := Map()
+COORDS["Offset"]["Item1"] := 0
+COORDS["Offset"]["Item2"] := 180
+COORDS["Offset"]["Item3"] := 329
+COORDS["Offset"]["Item4"] := 365
+
 
 
 ; ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰

@@ -21,6 +21,7 @@ SetMouseDelay 10  ; Sets the delay between mouse events to 10 milliseconds, bala
 ; Titles and verfsioning for GUI elements.
 global MACRO_TITLE := "Open Bundles"  ; The title displayed in main GUI elements.
 global MACRO_VERSION := "0.2.0"  ; Script version, helpful for user support and debugging.
+global OVERLAY_MODE := false  ; A flag to indicate whether overlay mode is active, affecting GUI behavior.
 
 
 ; ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
@@ -175,6 +176,7 @@ showguiMain() {
     btnPause := guiMain.AddButton("yp", "⏸ &Pause (F8)")  ; Adds a pause button with a shortcut key.
     btnHelp := guiMain.AddButton("yp", "🌐 &Wiki")  ; Adds a help button.
     btnExit := guiMain.AddButton("yp", "✖ E&xit (F5)")  ; Adds an exit button with a shortcut key.
+    btnGrid := guiMain.AddButton("yp", "# &Grid (F9)") ; Adds a Grid Toggle button
 
     ; Display the GUI on the screen.
     guiMain.Show()
@@ -188,6 +190,7 @@ showguiMain() {
     btnPause.OnEvent("Click", pauseMacro)  ; Connects the Pause button to its function.
     btnHelp.OnEvent("Click", openWiki)  ; Connects the Help button to its function.
     btnExit.OnEvent("Click", exitMacro)  ; Connects the Exit button to its function.
+    btnGrid.OnEvent("Click", toggleGrid) ; Connects the Grid button
 }
 
 
@@ -291,6 +294,111 @@ setCurrentAction(currentAction) {
 ; Return: OCR result object or recognized text.
 ; ---------------------------------------------------------------------------------
 getOcr(X, Y, W, H, Scale, ReturnObject := false) {
+
+    ; Visual Debugging
+    if (IsSet(OVERLAY_MODE) && OVERLAY_MODE) {
+        Highlight(X, Y, W, H, -500, "Red", 2, "OCR")
+    }
     OcrResult := OCR.FromRect(X, Y, W, H, "en", Scale)  ; Perform OCR on the specified area.
     return ReturnObject ? OcrResult : OcrResult.Text  ; Return the full OCR result object or just the text.
+}
+
+; ---------------------------------------------------------------------------------
+; Highlight Function (Debug)
+; ---------------------------------------------------------------------------------
+Highlight(x?, y?, w?, h?, showTime := 0, color := "Red", d := 2, text := "") {
+    static guis := []
+
+    if !IsSet(x) {
+        for _, r in guis
+            r.Destroy()
+        guis := []
+        return
+    }
+    if !guis.Length {
+        loop 4
+            guis.Push(Gui("+AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x08000000"))
+        ; Text Label GUI (Index 5)
+        guis.Push(Gui("+AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x08000000"))
+        guis[5].SetFont("s10 bold", "Segoe UI")
+        guis[5].BackColor := "Black" ; Contrast background
+    }
+    loop 4 {
+        i := A_Index
+            , x1 := (i = 2 ? x + w : x - d)
+            , y1 := (i = 3 ? y + h : y - d)
+            , w1 := (i = 1 or i = 3 ? w + 2 * d : d)
+            , h1 := (i = 2 or i = 4 ? h + 2 * d : d)
+        guis[i].BackColor := color
+        guis[i].Show("NA x" . x1 . " y" . y1 . " w" . w1 . " h" . h1)
+    }
+
+    ; Show Text Label
+    if (text != "") {
+        guis[5].BackColor := color
+        guis[5].Destroy() ; Recreate to clear controls/resize easily
+        guis[5] := Gui("+AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x08000000")
+        guis[5].BackColor := color
+        guis[5].SetFont("s9 bold cWhite", "Segoe UI")
+        guis[5].Add("Text", "x2 y0", text)
+        ; Position above the box
+        guis[5].Show("NA x" . x . " y" . (y - 20) . " w" . (w) . " h20")
+    } else {
+        guis[5].Hide()
+    }
+
+    if showTime > 0 {
+        Sleep(showTime)
+        Highlight()
+    } else if showTime < 0
+        SetTimer(Highlight, -Abs(showTime))
+}
+
+; ---------------------------------------------------------------------------------
+; F9: Calibration Mode (Draw Ruler)
+; ---------------------------------------------------------------------------------
+F9:: toggleGrid()
+
+; ---------------------------------------------------------------------------------
+; toggleGrid Function (F9)
+; Description: Toggles the Cyan Coordinate Grid (100px lines).
+; ---------------------------------------------------------------------------------
+toggleGrid(*) {
+    global OVERLAY_MODE
+    static gridGui := ""
+
+    if (gridGui) {
+        OVERLAY_MODE := false
+        gridGui.Destroy()
+        gridGui := ""
+        return
+    }
+    OVERLAY_MODE := true
+
+    if !WinExist("ahk_exe RobloxPlayerBeta.exe") {
+        MsgBox("Roblox window not found!")
+        return
+    }
+
+    WinGetClientPos &CX, &CY, &CW, &CH, "ahk_exe RobloxPlayerBeta.exe"
+
+    ; Create a Click-Through, Transparent Layered Window
+    gridGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20 +E0x80020")
+    gridGui.BackColor := "111111"
+    gridGui.SetFont("s12 bold", "Consolas")
+    WinSetTransColor("111111 200", gridGui)
+
+    ; --- Draw Coordinate Grid (Every 100px) ---
+    loop Floor(CH / 100) {
+        y := A_Index * 100
+        gridGui.Add("Text", "x0 y" y " w" CW " h1 Background00FFFF") ; Cyan Line
+        gridGui.Add("Text", "x0 y" y " c00FFFF BackgroundTrans", y)
+    }
+    loop Floor(CW / 100) {
+        x := A_Index * 100
+        gridGui.Add("Text", "x" x " y0 w1 h" CH " Background00FFFF") ; Cyan Line
+        gridGui.Add("Text", "x" x " y0 c00FFFF BackgroundTrans", x)
+    }
+
+    gridGui.Show("NA x" CX " y" CY " w" CW " h" CH)
 }
